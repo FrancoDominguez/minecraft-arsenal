@@ -1,0 +1,20 @@
+[Unit]
+Description=All the Mods 11 Minecraft Server (NeoForge)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/minecraft/server
+# NeoForge server packs ship a run.sh that reads user_jvm_args.txt for the heap.
+ExecStart=/opt/minecraft/server/run.sh nogui
+# On stop, SIGTERM triggers the JVM shutdown hook, which saves the world.
+KillSignal=SIGTERM
+Restart=on-failure
+RestartSec=15
+# Give the JVM time to flush + shut down cleanly before SIGKILL.
+TimeoutStopSec=120
+SuccessExitStatus=0 130 143
+
+[Install]
+WantedBy=multi-user.target
