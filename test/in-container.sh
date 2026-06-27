@@ -78,9 +78,28 @@ if grep -qiE "$FATAL" "$LOGF"; then
   log "FAIL: JVM/launcher died — $(grep -oiE "$FATAL" "$LOGF" | head -1)"
   exit 1
 fi
-if grep -qE "$SUCCESS" "$LOGF"; then
-  log "PASS: JVM launched and reached genuine mod-loading/startup"
-  exit 0
+if ! grep -qE "$SUCCESS" "$LOGF"; then
+  log "FAIL: no startup marker and no fatal error within ${TMO}s (JVM stalled?)"
+  exit 1
 fi
-log "FAIL: no startup marker and no fatal error within ${TMO}s (JVM stalled?)"
-exit 1
+log "PASS: JVM launched and reached genuine mod-loading/startup"
+
+# --- assertion 3: self-heal a half-installed disk ---
+# Reproduces the stopped live VM's exact state: pack extracted (.installed
+# present) but run.sh missing. bootstrap.sh must regenerate run.sh, NOT skip it.
+log "self-heal check: removing run.sh (keeping .installed) and re-running bootstrap"
+rm -f "$SRV/run.sh"
+if [[ ! -f "$SRV/.installed" ]]; then
+  log "FAIL: precondition — .installed should exist after first bootstrap"
+  exit 1
+fi
+if ! /opt/minecraft/deploy/bootstrap.sh; then
+  log "FAIL: bootstrap.sh (self-heal run) exited non-zero"
+  exit 1
+fi
+if [[ ! -x "$SRV/run.sh" ]]; then
+  log "FAIL: run.sh was NOT regenerated on a disk with .installed present (the latent redeploy bug)"
+  exit 1
+fi
+log "PASS: run.sh regenerated on a half-installed disk"
+exit 0
