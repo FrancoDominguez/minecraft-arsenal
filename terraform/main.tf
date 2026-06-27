@@ -14,6 +14,8 @@ resource "google_service_account" "minecraft" {
 resource "google_compute_address" "minecraft" {
   name   = "minecraft-arsenal-ip"
   region = var.region
+
+  depends_on = [google_project_service.compute]
 }
 
 # Open the Minecraft port to players.
@@ -28,6 +30,8 @@ resource "google_compute_firewall" "minecraft" {
 
   source_ranges = var.allowed_player_cidrs
   target_tags   = ["minecraft-arsenal"]
+
+  depends_on = [google_project_service.compute]
 }
 
 # Optional SSH rule — only created if you list CIDRs. Otherwise use
@@ -44,6 +48,8 @@ resource "google_compute_firewall" "ssh" {
 
   source_ranges = var.allowed_ssh_cidrs
   target_tags   = ["minecraft-arsenal"]
+
+  depends_on = [google_project_service.compute]
 }
 
 resource "google_compute_instance" "minecraft" {
@@ -93,8 +99,9 @@ resource "google_compute_instance" "minecraft" {
     backup_retention_days = var.backup_retention_days
   })
 
-  # Make sure the bucket, scripts, secrets, and IAM exist before first boot.
+  # Make sure the API, bucket, scripts, secrets, and IAM exist before first boot.
   depends_on = [
+    google_project_service.compute,
     google_storage_bucket_iam_member.vm_access,
     google_storage_bucket_object.deploy,
     google_secret_manager_secret_iam_member.cf_key_access,

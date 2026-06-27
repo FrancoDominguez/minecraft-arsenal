@@ -1,10 +1,6 @@
 # Secrets live in Secret Manager, fetched by the VM at boot — never in git,
-# never in plain instance metadata.
-
-resource "google_project_service" "secretmanager" {
-  service            = "secretmanager.googleapis.com"
-  disable_on_destroy = false
-}
+# never in plain instance metadata. The secretmanager.googleapis.com API is
+# enabled in apis.tf (google_project_service.secretmanager).
 
 resource "google_secret_manager_secret" "curseforge_api_key" {
   secret_id = "minecraft-arsenal-curseforge-api-key"

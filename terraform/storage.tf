@@ -42,6 +42,8 @@ resource "google_storage_bucket" "data" {
       type = "Delete"
     }
   }
+
+  depends_on = [google_project_service.storage]
 }
 
 # Grant the VM's service account read/write on the bucket. This works even when

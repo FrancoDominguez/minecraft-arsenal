@@ -32,6 +32,11 @@ fresh VM — so the *data* outlives any individual VM (or even GCP account).
 - **Scripts live in git, run from the bucket.** Terraform uploads `server/` to
   `deploy/`; the tiny startup script syncs it and runs `bootstrap.sh`. Editing a
   script = `terraform apply` (re-upload) + reboot (re-sync).
+- **APIs are enabled by Terraform.** `apis.tf` turns on Compute, Secret Manager
+  (compute project) and Storage (bucket project) via `google_project_service`, so
+  `terraform apply` works on a brand-new project with nothing pre-enabled — no
+  manual `gcloud services enable` step. `disable_on_destroy = false` so a destroy
+  doesn't yank an API out from under the project.
 - **Mods aren't in git.** ATM11 is a ~CurseForge pack; the official *ServerFiles*
   zip is pinned by file ID and fetched via the CurseForge API, then cached in the
   bucket as an upstream-outage fallback. Git pins *which* version; the bucket
