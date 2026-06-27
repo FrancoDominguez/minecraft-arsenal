@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Test stub for `gcloud` — only implements what bootstrap.sh calls:
+#   gcloud secrets versions access latest --secret=<id>
+# Returns deterministic fake secret material so no real GCP / Secret Manager is
+# touched. The CurseForge key comes back empty on purpose: the gsutil stub serves
+# the pack from the (faked) bucket cache, so bootstrap never needs to hit the API.
+set -euo pipefail
+
+if [[ "${1:-}" == "secrets" && "${2:-}" == "versions" && "${3:-}" == "access" ]]; then
+  secret=""
+  for arg in "$@"; do
+    case "$arg" in
+      --secret=*) secret="${arg#--secret=}" ;;
+    esac
+  done
+  case "$secret" in
+    *rcon*) echo "test-rcon-password" ;;   # RCON password the backup unit expects
+    *)      echo "" ;;                      # CurseForge key: empty -> use cache
+  esac
+  exit 0
+fi
+
+# Anything else bootstrap might call is a no-op success in the test.
+exit 0

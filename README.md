@@ -3,7 +3,7 @@
 Terraform + bootstrap for an always-on **All the Mods 11** Minecraft server on
 GCP, with daily world backups to GCS and automatic restore onto any fresh VM.
 
-- **Pack:** All the Mods 11 (NeoForge, MC 26.1.2, Java 21) — version-pinned, easy to bump or drop to ATM10
+- **Pack:** All the Mods 11 (NeoForge, MC 26.1.2, Java 25) — version-pinned, easy to bump or drop to ATM10
 - **Host:** `e2-standard-4` (4 vCPU / 16 GB, ~12 GB heap), always-on, Montréal (`northamerica-northeast1`), ~$110/mo
 - **Durability:** daily RCON-clean backups to GCS; fresh VMs restore the latest world automatically
 - **Portable:** the data bucket can live in a permanent account separate from whoever runs the VM

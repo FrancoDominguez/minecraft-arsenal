@@ -1,6 +1,6 @@
 # Architecture
 
-A single always-on GCP VM runs **All the Mods 11** (NeoForge, MC 26.1.2, Java 21).
+A single always-on GCP VM runs **All the Mods 11** (NeoForge, MC 26.1.2, Java 25).
 World data is backed up daily to a GCS bucket and restored automatically onto any
 fresh VM — so the *data* outlives any individual VM (or even GCP account).
 
@@ -11,7 +11,7 @@ fresh VM — so the *data* outlives any individual VM (or even GCP account).
                                     │ terraform apply
                                     ▼
         ┌─────────────────── Compute account (project_id) ───────────────────┐
-        │  e2-standard-4 VM ──run.sh──> ATM11 NeoForge server (Java 21)       │
+        │  e2-standard-4 VM ──run.sh──> ATM11 NeoForge server (Java 25)       │
         │     ▲  startup.sh: sync deploy/ from bucket, run bootstrap.sh       │
         │     │  systemd: minecraft.service + minecraft-backup.timer (daily)  │
         └─────┼──────────────────────────────────────────────────────────────┘

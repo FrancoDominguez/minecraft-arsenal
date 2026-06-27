@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Test stub for `gsutil` — emulates just enough of the bucket for bootstrap.sh +
+# restore.sh, backed by a local zip mounted at /test/serverpack.zip:
+#
+#   gsutil -q stat gs://.../serverpack/...   -> 0 (cache "hit") if the local zip exists
+#   gsutil -q stat gs://.../backups/world-*  -> 1 (no backup -> restore starts fresh world)
+#   gsutil cp <serverpack cache> <dest>      -> copy the local zip to <dest>
+#   gsutil cp <src> <serverpack cache>       -> no-op (would re-cache to bucket)
+#   gsutil -m rsync ... / everything else    -> no-op success
+set -euo pipefail
+
+LOCAL_PACK=/test/serverpack.zip
+args=("$@")
+
+# Find the operation (skip leading flags like -q / -m).
+op=""
+for a in "${args[@]}"; do
+  case "$a" in
+    -*) continue ;;
+    *) op="$a"; break ;;
+  esac
+done
+
+last="${args[${#args[@]}-1]}"
+
+case "$op" in
+  stat)
+    if [[ "$last" == *"/backups/world-"* ]]; then
+      exit 1   # no world backup -> fresh world
+    fi
+    [[ -f "$LOCAL_PACK" ]] && exit 0 || exit 1   # serverpack cache present?
+    ;;
+  cp)
+    # Downloading the cached pack: src is the gs:// serverpack, dest is local.
+    if [[ "${args[${#args[@]}-2]}" == gs://*serverpack* ]]; then
+      cp "$LOCAL_PACK" "$last"
+      exit 0
+    fi
+    exit 0   # uploading back to bucket: no-op
+    ;;
+  *)
+    exit 0   # rsync, etc.
+    ;;
+esac

@@ -33,3 +33,6 @@ server/mods/
 
 # OS
 .DS_Store
+
+# Local test harness cache (downloaded server packs)
+test/.cache/

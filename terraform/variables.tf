@@ -92,14 +92,14 @@ variable "minecraft_version" {
 
 variable "neoforge_version" {
   type        = string
-  default     = "26.1.2.29"
-  description = "NeoForge build for the pack. Bump alongside the pack version."
+  default     = "26.1.2.76"
+  description = "NeoForge build for the pack (what the ATM11 0.1.2 ServerFiles ship). Bump alongside the pack version."
 }
 
 variable "java_version" {
   type        = string
-  default     = "21"
-  description = "Temurin JDK major version. MC 1.21+ needs Java 21."
+  default     = "25"
+  description = "Temurin JDK major version. Must match what the pack's NeoForge build is compiled for — ATM11 / NeoForge 26.1.2.x needs Java 25 (class file v69)."
 }
 
 variable "curseforge_project_id" {
