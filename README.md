@@ -13,12 +13,17 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full design.
 ## Quick start
 
 ```bash
-cd terraform
-cp terraform.tfvars.example terraform.tfvars
-# Fill in: project_id, bucket_name, CurseForge IDs + API key, rcon_password
-terraform init
-terraform apply
+cp .env.example .env
+# Fill in: project_id, bucket_name, CurseForge IDs + API key, rcon_password.
+# Find the CurseForge IDs with: python3 scripts/find-atm-server-file.py
+set -a; source .env; set +a          # loads every TF_VAR_ into the environment
+terraform -chdir=terraform init
+terraform -chdir=terraform apply
 ```
+
+> All project variables live in a single gitignored `.env` (see `.env.example`),
+> using Terraform's native `TF_VAR_` convention. Values are single-quoted because
+> the CurseForge key contains `$`.
 
 Then watch the first-boot install (downloads the pack, ~a few minutes):
 

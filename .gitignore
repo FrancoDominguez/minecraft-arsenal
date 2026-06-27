@@ -15,6 +15,9 @@ terraform.rc
 .terraform.lock.hcl
 
 # Secrets / creds — NEVER commit
+.env
+.env.*
+!.env.example
 *.json.key
 *-key.json
 *-credentials.json

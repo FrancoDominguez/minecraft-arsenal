@@ -53,7 +53,7 @@ reads/writes the same canonical bucket and restores the same world.
 
 ## Updating the modpack (alpha — expect frequent bumps)
 
-ATM11 is alpha. To move to a new pack build, edit `terraform.tfvars`:
+ATM11 is alpha. To move to a new pack build, edit `.env`:
 
 1. `curseforge_server_file_id` → the new *ServerFiles* zip file ID.
 2. `neoforge_version` (and `minecraft_version` / `java_version` if they changed).
@@ -64,12 +64,23 @@ IDs and its versions (MC 1.21.1, NeoForge 21.1.x, Java 21). Nothing else changes
 
 ## Finding the CurseForge IDs
 
-- Get a free API key at <https://console.curseforge.com/> → API Keys.
-- `curseforge_project_id`: the numeric mod ID for ATM11 (from the CurseForge API
-  `GET /v1/mods/search`, or the project page).
-- `curseforge_server_file_id`: on the ATM11 Files page, open the **ServerFiles**
-  zip for the version you want; the file ID is in its URL / the API
-  `GET /v1/mods/{id}/files`.
+Easiest: run the helper (reads the API key from `.env`):
+
+```bash
+python3 scripts/find-atm-server-file.py            # ATM11
+python3 scripts/find-atm-server-file.py all-the-mods-10   # stable fallback
+```
+
+It prints `curseforge_project_id` and lists every **ServerFiles** zip with its
+file ID + game version + date — pick one for `curseforge_server_file_id`.
+
+Manually, if you prefer: the API key is free at <https://console.curseforge.com/>
+→ API Keys; the project ID comes from `GET /v1/mods/search` and the ServerFiles
+file ID from `GET /v1/mods/{id}/files` (the file with `isServerPack: true`).
+
+> Note (2026-06-26): the helper is verified to issue the correct request, but the
+> key supplied so far returns `403 API Key missing or invalid` — regenerate/verify
+> the key before relying on auto-download.
 
 ## Cost (us/Montréal, on-demand)
 
