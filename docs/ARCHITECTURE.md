@@ -82,6 +82,17 @@ python3 scripts/find-atm-server-file.py all-the-mods-10   # stable fallback
 It prints `curseforge_project_id` and lists every **ServerFiles** zip with its
 file ID + game version + date — pick one for `curseforge_server_file_id`.
 
+> Note (2026-06-27): for ATM11 the helper finds the project (id `1148445`) but
+> reports "No ServerFiles found" — ATM11 doesn't publish standalone ServerFiles
+> entries. Instead each **client** file carries a `serverPackFileId` pointing at
+> the matching server pack. The helper now lists those; use the newest
+> `serverPackFileId` (e.g. `8304510` for client 0.1.2) as
+> `curseforge_server_file_id`. `bootstrap.sh`'s `GET /v1/mods/{id}/files/{fileId}`
+> resolves that file ID fine. (Follow-up: have the helper emit a copy-paste-ready
+> `TF_VAR_curseforge_server_file_id=` line.)
+
+The API key that was 403'ing on 2026-06-26 now works (verified 2026-06-27).
+
 Manually, if you prefer: the API key is free at <https://console.curseforge.com/>
 → API Keys; the project ID comes from `GET /v1/mods/search` and the ServerFiles
 file ID from `GET /v1/mods/{id}/files` (the file with `isServerPack: true`).
