@@ -94,8 +94,8 @@ file ID from `GET /v1/mods/{id}/files` (the file with `isServerPack: true`).
 
 | Item | ~Monthly |
 |---|---|
-| e2-standard-4 VM (24/7) | ~$98 |
-| 60 GB pd-ssd | ~$10 |
+| e2-standard-4 VM compute, 24/7 (vCPU + RAM) | ~$98 |
+| 60 GB pd-ssd (the VM's boot disk; billed separately from compute) | ~$10 |
 | GCS storage (few GB) + egress | <$1 |
 | **Total** | **~$110** |
 
