@@ -4,7 +4,13 @@ resource "google_service_account" "minecraft" {
   display_name = "Minecraft Arsenal VM"
 }
 
-# Stable public IP so the connect address never changes across reboots.
+# Stable public IP so the connect address never changes across reboots or VM
+# rebuilds — within this compute account. Note it canNOT be made portable across
+# accounts the way the bucket is: a reserved external IP is a project-scoped
+# resource and GCP won't let a VM in project B attach an IP reserved in project A.
+# If you want a connect address that survives an account move, put a DNS A record
+# in front of this IP (a zone you control) and repoint it after the move — that's
+# the real "permanent address" knob. See docs/ARCHITECTURE.md.
 resource "google_compute_address" "minecraft" {
   name   = "minecraft-arsenal-ip"
   region = var.region
@@ -46,6 +52,11 @@ resource "google_compute_instance" "minecraft" {
   zone         = var.zone
   tags         = ["minecraft-arsenal"]
 
+  # The boot disk is just the OS — a fresh Debian 12 image from Google's public
+  # image project (debian-cloud/debian-12). It holds NO world data and is fully
+  # disposable. World persistence comes from the GCS bucket, not this disk:
+  # bootstrap.sh's restore step pulls the latest backup from gs://<bucket>/backups/
+  # onto the fresh VM at first boot. So there's no bucket reference here by design.
   boot_disk {
     initialize_params {
       image = "debian-cloud/debian-12"

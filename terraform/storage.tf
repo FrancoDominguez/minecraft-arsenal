@@ -11,7 +11,12 @@ resource "google_storage_bucket" "data" {
   # Uniform access — IAM only, no per-object ACLs.
   uniform_bucket_level_access = true
 
-  # Keep a version history so a corrupted world can be rolled back.
+  # Keep a version history so a corrupted world can be rolled back. Cost impact is
+  # small: noncurrent versions are billed as ordinary storage at the same class
+  # rate, and the num_newer_versions=5 lifecycle rule below caps history at 5 old
+  # copies per object. Daily backups are already distinct timestamped objects, so
+  # versioning only multiplies storage for objects that get overwritten in place.
+  # Worst case ~5x the size of a few overwritten GB ≈ a few GB extra ≈ <$0.20/mo.
   versioning {
     enabled = true
   }

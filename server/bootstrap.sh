@@ -29,6 +29,14 @@ if ! command -v "java" >/dev/null || ! java -version 2>&1 | grep -q "\"${JAVA_VE
   apt-get install -y "temurin-${JAVA_VERSION}-jdk"
 fi
 
+# SSH quality-of-life tools, installed independently of the Java guard above so
+# they show up even on a VM that already had Java.
+if ! command -v nvim >/dev/null || ! command -v tmux >/dev/null; then
+  log "installing neovim + tmux"
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get install -y neovim tmux
+fi
+
 # ---------------------------------------------------------------------------
 # 2. Secrets from Secret Manager
 # ---------------------------------------------------------------------------

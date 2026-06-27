@@ -51,6 +51,14 @@ Two GCP providers (see `terraform/providers.tf`):
 So: buddy runs `terraform apply` with his creds → VM in his project, but it
 reads/writes the same canonical bucket and restores the same world.
 
+**What does *not* travel with the account: the IP.** The static external IP
+(`google_compute_address`) is permanent within whichever compute account is
+active, but a reserved IP is a project-scoped resource — GCP won't let a VM in
+project B use an IP reserved in project A. So unlike the bucket, the IP can't be
+parked in the permanent account. If you want a connect address that survives an
+account move, put a **DNS A record** (a zone you control) in front of the IP and
+repoint it after the move. The bucket holds the world; DNS holds the address.
+
 ## Updating the modpack (alpha — expect frequent bumps)
 
 ATM11 is alpha. To move to a new pack build, edit `.env`:
