@@ -1,0 +1,7 @@
+[Unit]
+Description=Daily Minecraft world backup to GCS
+After=minecraft.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/minecraft/deploy/backup.sh

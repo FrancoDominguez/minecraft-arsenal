@@ -1,0 +1,35 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+.terraform.lock.hcl
+
+# Secrets / creds — NEVER commit
+.env
+.env.*
+!.env.example
+*.json.key
+*-key.json
+*-credentials.json
+sa-*.json
+*.pem
+
+# Local server artifacts (should live in GCS, never git)
+server/world/
+server/mods/
+*.zip
+*.jar
+!**/templates/*.jar
+
+# OS
+.DS_Store
