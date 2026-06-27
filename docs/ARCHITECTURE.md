@@ -124,5 +124,8 @@ A 1-year committed-use discount drops the VM to ~$60/mo. Bump
   at boot. Never in git, never in plain instance metadata.
 - No public SSH by default — use `gcloud compute ssh` (IAP) or set
   `allowed_ssh_cidrs` to your IP/32.
-- `white-list=true` by default: the game port is public, but only allow-listed
-  players can join. Add players with `/whitelist add <name>` via RCON or console.
+- `white-list=false` (open server): the game port is public and anyone can join.
+  This is intentional — we don't restrict players on this server. To lock it down,
+  set `white-list`/`enforce-whitelist` back to `true` in
+  `server/config/server.properties` and add players with `/whitelist add <name>`
+  via RCON or console.
