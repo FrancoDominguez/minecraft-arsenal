@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# First-boot installer for the All the Mods 11 server. Idempotent: safe to
+# First-boot installer for the All the Mods 10 server. Idempotent: safe to
 # re-run on every reboot. Run by the GCE startup script after it syncs this
 # folder from the bucket. Logs to /var/log/minecraft-bootstrap.log.
 set -euo pipefail
@@ -52,10 +52,10 @@ echo "RCON_PASSWORD=${RCON_PASSWORD}" > /etc/minecraft/rcon.env
 umask 022
 
 # ---------------------------------------------------------------------------
-# 3a. Extract the ATM11 server pack (once — gated by the .installed sentinel).
+# 3a. Extract the ATM10 server pack (once — gated by the .installed sentinel).
 # ---------------------------------------------------------------------------
 if [[ ! -f "$SRV/.installed" ]]; then
-  PACK_CACHE="gs://${BUCKET_NAME}/serverpack/atm11-${CURSEFORGE_FILE_ID}.zip"
+  PACK_CACHE="gs://${BUCKET_NAME}/serverpack/${CURSEFORGE_PROJECT_ID}-${CURSEFORGE_FILE_ID}.zip"
   ZIP=/tmp/serverpack.zip
 
   if gsutil -q stat "$PACK_CACHE"; then
@@ -77,7 +77,7 @@ if [[ ! -f "$SRV/.installed" ]]; then
   unzip -oq "$ZIP" -d "$SRV"
   rm -f "$ZIP"
   # Some packs nest everything one level deep; flatten if so. Look for either a
-  # ready run.sh or the NeoForge installer (ATM11 ships the latter).
+  # ready run.sh or the NeoForge installer (the pack ships the latter).
   if [[ ! -f "$SRV/run.sh" ]] && ! compgen -G "$SRV/neoforge-*-installer.jar" >/dev/null; then
     inner=$(find "$SRV" -maxdepth 2 \( -name run.sh -o -name 'neoforge-*-installer.jar' \) -printf '%h\n' | head -1 || true)
     [[ -n "$inner" && "$inner" != "$SRV" ]] && cp -an "$inner"/. "$SRV"/
@@ -90,7 +90,7 @@ fi
 # .installed) so a half-installed disk — pack extracted but run.sh never
 # generated, e.g. an earlier boot that died here — self-heals on the next run.
 #
-# NeoForge server packs (ATM11) DON'T ship a ready-to-run run.sh; they ship the
+# NeoForge server packs (ATM10) DON'T ship a ready-to-run run.sh; they ship the
 # NeoForge installer + startserver.sh. run.sh (plus the libraries/ tree and the
 # @argfiles `run.sh nogui` depends on) is produced by the installer's
 # --installServer step.

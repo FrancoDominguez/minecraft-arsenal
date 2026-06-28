@@ -1,6 +1,6 @@
 # Architecture
 
-A single always-on GCP VM runs **All the Mods 11** (NeoForge, MC 26.1.2, Java 25).
+A single always-on GCP VM runs **All the Mods 10** (NeoForge, MC 1.21.1, Java 21).
 World data is backed up daily to a GCS bucket and restored automatically onto any
 fresh VM — so the *data* outlives any individual VM (or even GCP account).
 
@@ -11,7 +11,7 @@ fresh VM — so the *data* outlives any individual VM (or even GCP account).
                                     │ terraform apply
                                     ▼
         ┌─────────────────── Compute account (project_id) ───────────────────┐
-        │  e2-standard-4 VM ──run.sh──> ATM11 NeoForge server (Java 25)       │
+        │  e2-standard-4 VM ──run.sh──> ATM10 NeoForge server (Java 21)       │
         │     ▲  startup.sh: sync deploy/ from bucket, run bootstrap.sh       │
         │     │  systemd: minecraft.service + minecraft-backup.timer (daily)  │
         └─────┼──────────────────────────────────────────────────────────────┘
@@ -19,7 +19,7 @@ fresh VM — so the *data* outlives any individual VM (or even GCP account).
               ▼                                 ▼
         ┌──────────── Storage account (bucket_project, optional) ─────────────┐
         │  gs://<bucket>/  deploy/         scripts + config (uploaded by TF)   │
-        │                  serverpack/     cached ATM11 ServerFiles zip        │
+        │                  serverpack/     cached ATM10 ServerFiles zip        │
         │                  backups/        world-<ts>.tar.zst + world-latest   │
         └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -37,7 +37,7 @@ fresh VM — so the *data* outlives any individual VM (or even GCP account).
   `terraform apply` works on a brand-new project with nothing pre-enabled — no
   manual `gcloud services enable` step. `disable_on_destroy = false` so a destroy
   doesn't yank an API out from under the project.
-- **Mods aren't in git.** ATM11 is a ~CurseForge pack; the official *ServerFiles*
+- **Mods aren't in git.** ATM10 is a ~CurseForge pack; the official *ServerFiles*
   zip is pinned by file ID and fetched via the CurseForge API, then cached in the
   bucket as an upstream-outage fallback. Git pins *which* version; the bucket
   holds the *bytes*. (packwiz-per-mod was rejected — some CF mods disable
@@ -64,47 +64,44 @@ parked in the permanent account. If you want a connect address that survives an
 account move, put a **DNS A record** (a zone you control) in front of the IP and
 repoint it after the move. The bucket holds the world; DNS holds the address.
 
-## Updating the modpack (alpha — expect frequent bumps)
+## Updating the modpack
 
-ATM11 is alpha. To move to a new pack build, edit `.env`:
+To move to a new pack build, edit `.env`:
 
 1. `curseforge_server_file_id` → the new *ServerFiles* zip file ID.
 2. `neoforge_version` (and `minecraft_version` / `java_version` if they changed).
-3. `terraform apply`, then recreate/reboot the VM.
+3. `terraform apply -replace=google_compute_instance.minecraft` — recreates the VM
+   so it re-bootstraps the new pack (and starts a fresh world unless a backup
+   exists in the bucket). The static IP is a separate resource and is preserved.
 
-**Dropping to ATM10 (stable):** same three vars, pointed at ATM10's project/file
-IDs and its versions (MC 1.21.1, NeoForge 21.1.x, Java 21). Nothing else changes.
+Current pin: **ATM10** project `925200`, ServerFiles `8323948` (`ServerFiles-7.1`,
+MC 1.21.1 / NeoForge 21.1.x / Java 21). Switching to another pack entirely is the
+same edit pointed at that pack's project/file IDs and versions.
 
 ## Finding the CurseForge IDs
 
 Easiest: run the helper (reads the API key from `.env`):
 
 ```bash
-python3 scripts/find-atm-server-file.py            # ATM11
-python3 scripts/find-atm-server-file.py all-the-mods-10   # stable fallback
+python3 scripts/find-atm-server-file.py all-the-mods-10
 ```
 
 It prints `curseforge_project_id` and lists every **ServerFiles** zip with its
 file ID + game version + date — pick one for `curseforge_server_file_id`.
 
-> Note (2026-06-27): for ATM11 the helper finds the project (id `1148445`) but
-> reports "No ServerFiles found" — ATM11 doesn't publish standalone ServerFiles
-> entries. Instead each **client** file carries a `serverPackFileId` pointing at
-> the matching server pack. The helper now lists those; use the newest
-> `serverPackFileId` (e.g. `8304510` for client 0.1.2) as
-> `curseforge_server_file_id`. `bootstrap.sh`'s `GET /v1/mods/{id}/files/{fileId}`
-> resolves that file ID fine. (Follow-up: have the helper emit a copy-paste-ready
-> `TF_VAR_curseforge_server_file_id=` line.)
+> Note: ATM10 publishes standalone `isServerPack=true` ServerFiles (e.g.
+> `8323948` = `ServerFiles-7.1`), so the helper finds them directly — unlike
+> ATM11, where the server pack is only reachable via each client file's
+> `serverPackFileId`. Either way `bootstrap.sh`'s
+> `GET /v1/mods/{id}/files/{fileId}` resolves the pinned file ID and downloads it.
 
-The API key that was 403'ing on 2026-06-26 now works (verified 2026-06-27).
+The CurseForge API key in `.env` is verified working (re-checked 2026-06-28).
 
 Manually, if you prefer: the API key is free at <https://console.curseforge.com/>
 → API Keys; the project ID comes from `GET /v1/mods/search` and the ServerFiles
 file ID from `GET /v1/mods/{id}/files` (the file with `isServerPack: true`).
-
-> Note (2026-06-26): the helper is verified to issue the correct request, but the
-> key supplied so far returns `403 API Key missing or invalid` — regenerate/verify
-> the key before relying on auto-download.
+Remember to send a `User-Agent` header — `api.curseforge.com` 403s requests
+without one even with a valid key.
 
 ## Cost (us/Montréal, on-demand)
 
@@ -116,7 +113,7 @@ file ID from `GET /v1/mods/{id}/files` (the file with `isServerPack: true`).
 | **Total** | **~$110** |
 
 A 1-year committed-use discount drops the VM to ~$60/mo. Bump
-`machine_type` to `e2-standard-8` if ATM11 lags with several players.
+`machine_type` to `e2-standard-8` if ATM10 lags with several players.
 
 ## Security notes
 
