@@ -114,6 +114,12 @@ variable "curseforge_server_file_id" {
   description = "CurseForge file ID of the ATM11 *ServerFiles* zip to pin. Bump to update the pack."
 }
 
+variable "curseforge_client_file_id" {
+  type        = string
+  default     = ""
+  description = "CurseForge file ID of the matching ATM11 *client* pack (the sibling of the server file for the SAME pack version — it carries the client-only/UI mods the ServerFiles strip). Used to cache the client zip + publish client/manifest.json for the one-click installer. Empty = skip (server boots normally). Find it with scripts/find-atm-server-file.py."
+}
+
 variable "curseforge_api_key" {
   type        = string
   sensitive   = true

@@ -105,6 +105,75 @@ fi
 chmod +x "$SRV/run.sh"
 
 # ---------------------------------------------------------------------------
+# 3c. Publish the matching CLIENT pack + a manifest to the bucket.
+#
+# The client pack is the SIBLING of the server pack: same CurseForge project,
+# same pack version, a different file ID. It carries the client-only/UI mods the
+# ServerFiles strip, so it — not the server install — is the source of truth for
+# "what a friend must install to join". We cache the client zip in the bucket
+# (so friends never need a CurseForge key) and write client/manifest.json
+# describing the pinned version + connect address. The future one-click installer
+# reads the manifest, pulls the cached zip, and pre-points the client at
+# SERVER_ADDRESS. See docs/ARCHITECTURE.md + the one-click-installer issue.
+#
+# Best-effort by design: any failure here logs a WARN and NEVER blocks the server
+# from starting. Skipped entirely when CURSEFORGE_CLIENT_FILE_ID is unset — that
+# is the trivial single-modpack case with the feature simply turned off.
+# ---------------------------------------------------------------------------
+publish_client_pack() {
+  [[ -n "${CURSEFORGE_CLIENT_FILE_ID:-}" ]] || { log "no CURSEFORGE_CLIENT_FILE_ID set — skipping client pack publish"; return 0; }
+
+  local obj="client/atm11-client-${CURSEFORGE_CLIENT_FILE_ID}.zip"
+  local gs="gs://${BUCKET_NAME}/${obj}"
+  local zip=/tmp/clientpack.zip
+
+  # Cache by the PINNED file id, so a re-boot reuses the bucket copy and never
+  # has to touch the CurseForge API (mirrors the server-pack cache in 3a).
+  if gsutil -q stat "$gs"; then
+    log "client pack already cached in bucket ($obj)"
+  else
+    [[ -n "$CF_API_KEY" ]] || { log "WARN: client pack not cached and no CurseForge key — skipping client publish"; return 0; }
+    log "fetching client pack from CurseForge (project=$CURSEFORGE_PROJECT_ID file=$CURSEFORGE_CLIENT_FILE_ID)"
+    local url
+    url=$(curl -fsSL -H "x-api-key: ${CF_API_KEY}" \
+      "https://api.curseforge.com/v1/mods/${CURSEFORGE_PROJECT_ID}/files/${CURSEFORGE_CLIENT_FILE_ID}" \
+      | jq -r '.data.downloadUrl')
+    [[ "$url" != "null" && -n "$url" ]] || { log "WARN: CurseForge returned no client downloadUrl (distribution disabled?) — skipping"; return 0; }
+    curl -fsSL -o "$zip" "$url"
+    log "caching client pack to bucket ($obj)"
+    gsutil cp "$zip" "$gs"
+    rm -f "$zip"
+  fi
+
+  # The manifest is the per-server source of truth the installer reads: which
+  # client version to install, where the bytes live, and where to connect.
+  # Rewritten every boot (cheap) so a pack bump or IP change is reflected.
+  local manifest=/tmp/manifest.json
+  jq -n \
+    --arg proj "$CURSEFORGE_PROJECT_ID" \
+    --arg cfid "$CURSEFORGE_CLIENT_FILE_ID" \
+    --arg sfid "${CURSEFORGE_FILE_ID:-}" \
+    --arg obj  "$obj" \
+    --arg addr "${SERVER_ADDRESS:-}" \
+    --arg mc   "${MINECRAFT_VERSION:-}" \
+    --arg nf   "${NEOFORGE_VERSION:-}" \
+    '{
+       curseforge_project_id: $proj,
+       client_file_id:        $cfid,
+       server_file_id:        $sfid,
+       client_pack_object:    $obj,
+       server_address:        $addr,
+       minecraft_version:     $mc,
+       neoforge_version:      $nf
+     }' > "$manifest"
+  gsutil -h "Content-Type:application/json" cp "$manifest" "gs://${BUCKET_NAME}/client/manifest.json"
+  rm -f "$manifest"
+  log "client manifest published to gs://${BUCKET_NAME}/client/manifest.json"
+}
+
+publish_client_pack || log "WARN: client pack publish step failed (non-fatal) — server boot continues"
+
+# ---------------------------------------------------------------------------
 # 4. Config: EULA, heap, server.properties (with RCON wired for clean backups)
 # ---------------------------------------------------------------------------
 echo "eula=true" > "$SRV/eula.txt"

@@ -20,6 +20,7 @@ fresh VM — so the *data* outlives any individual VM (or even GCP account).
         ┌──────────── Storage account (bucket_project, optional) ─────────────┐
         │  gs://<bucket>/  deploy/         scripts + config (uploaded by TF)   │
         │                  serverpack/     cached ATM11 ServerFiles zip        │
+        │                  client/         cached client pack + manifest.json  │
         │                  backups/        world-<ts>.tar.zst + world-latest   │
         └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -42,6 +43,17 @@ fresh VM — so the *data* outlives any individual VM (or even GCP account).
   bucket as an upstream-outage fallback. Git pins *which* version; the bucket
   holds the *bytes*. (packwiz-per-mod was rejected — some CF mods disable
   third-party download, which breaks per-mod fetches.)
+- **The client pack is published the same way.** The matching *client* pack (the
+  sibling file of the ServerFiles for the same pack version — it carries the
+  client-only/UI mods the ServerFiles strip) is the source of truth for "what a
+  friend must install to join". Bootstrap caches its zip under `client/` and
+  writes `client/manifest.json` (`client_file_id`, `client_pack_object`,
+  `server_address`, versions). The future one-click installer reads that manifest
+  → pulls the cached zip → pre-points the client at the server, with **no
+  CurseForge key on the friend's machine**. Pinned by `curseforge_client_file_id`;
+  best-effort (never blocks server boot); skipped when that var is empty. How the
+  manifest/zip get *exposed* to friends (public object vs signed URL) is decided
+  in the installer PR — for now they live in the (private) bucket.
 
 ## Account portability (the "run from my buddy's creds later" goal)
 
@@ -69,8 +81,10 @@ repoint it after the move. The bucket holds the world; DNS holds the address.
 ATM11 is alpha. To move to a new pack build, edit `.env`:
 
 1. `curseforge_server_file_id` → the new *ServerFiles* zip file ID.
-2. `neoforge_version` (and `minecraft_version` / `java_version` if they changed).
-3. `terraform apply`, then recreate/reboot the VM.
+2. `curseforge_client_file_id` → the matching *client* file ID for that same
+   version (so the one-click installer stays in lockstep with the server).
+3. `neoforge_version` (and `minecraft_version` / `java_version` if they changed).
+4. `terraform apply`, then recreate/reboot the VM.
 
 **Dropping to ATM10 (stable):** same three vars, pointed at ATM10's project/file
 IDs and its versions (MC 1.21.1, NeoForge 21.1.x, Java 21). Nothing else changes.
@@ -84,8 +98,11 @@ python3 scripts/find-atm-server-file.py            # ATM11
 python3 scripts/find-atm-server-file.py all-the-mods-10   # stable fallback
 ```
 
-It prints `curseforge_project_id` and lists every **ServerFiles** zip with its
-file ID + game version + date — pick one for `curseforge_server_file_id`.
+It prints `curseforge_project_id` and lists the pack files newest-first. For
+ATM11 it shows each **client file** paired with its **server pack** file ID, so
+you fill both vars from one line: `client_file_id` → `curseforge_client_file_id`,
+`server_file_id` → `curseforge_server_file_id`. (For packs that publish
+standalone ServerFiles, like ATM10, it lists those directly instead.)
 
 > Note (2026-06-27): for ATM11 the helper finds the project (id `1148445`) but
 > reports "No ServerFiles found" — ATM11 doesn't publish standalone ServerFiles

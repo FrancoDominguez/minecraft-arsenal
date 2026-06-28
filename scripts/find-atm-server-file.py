@@ -65,20 +65,37 @@ def main():
     print(f"  TF_VAR_curseforge_project_id={mod['id']}\n")
 
     files = get(f"/mods/{mod['id']}/files", key, {"pageSize": 50}).get("data", [])
-    server_files = [f for f in files if f.get("isServerPack")]
-    if not server_files:
-        print("  No ServerFiles found in the latest 50 files. Server packs may be")
-        print("  attached to client files via 'serverPackFileId' — check the newest:")
-        for f in files[:5]:
-            spid = f.get("serverPackFileId")
-            print(f"    {f['fileName']}  serverPackFileId={spid}")
-        return
 
-    print("  ServerFiles (newest first) — pick one for TF_VAR_curseforge_server_file_id:")
-    for f in sorted(server_files, key=lambda x: x.get("fileDate", ""), reverse=True):
-        vers = ", ".join(f.get("gameVersions", []))
-        print(f"    id={f['id']:<10} {f['fileName']:<40} [{vers}]  {f.get('fileDate','')[:10]}")
-    print()
+    # Two shapes exist in the wild:
+    #  - ATM10 etc.: standalone files with isServerPack=true (the ServerFiles zip).
+    #  - ATM11: no standalone ServerFiles; each CLIENT file carries a
+    #    serverPackFileId pointing at its matching server pack. That client file's
+    #    own id and its serverPackFileId are exactly the two TF vars we need:
+    #    curseforge_client_file_id and curseforge_server_file_id.
+    server_files = [f for f in files if f.get("isServerPack")]
+    paired = [f for f in files if f.get("serverPackFileId")]
+
+    if server_files:
+        print("  Standalone ServerFiles (newest first) — pick one for TF_VAR_curseforge_server_file_id:")
+        for f in sorted(server_files, key=lambda x: x.get("fileDate", ""), reverse=True):
+            vers = ", ".join(f.get("gameVersions", []))
+            print(f"    server_file_id={f['id']:<10} {f['fileName']:<40} [{vers}]  {f.get('fileDate','')[:10]}")
+        print()
+
+    if paired:
+        print("  Client files with a matching server pack (newest first):")
+        print("    -> client_file_id = TF_VAR_curseforge_client_file_id   (the one-click installer's client pack)")
+        print("    -> server_file_id = TF_VAR_curseforge_server_file_id   (the ServerFiles the VM runs)")
+        for f in sorted(paired, key=lambda x: x.get("fileDate", ""), reverse=True):
+            vers = ", ".join(f.get("gameVersions", []))
+            print(f"    client_file_id={f['id']:<10} server_file_id={str(f['serverPackFileId']):<10} "
+                  f"{f['fileName']:<40} [{vers}]  {f.get('fileDate','')[:10]}")
+        print()
+
+    if not server_files and not paired:
+        print("  No ServerFiles or paired client files in the latest 50 files. Newest files:")
+        for f in files[:5]:
+            print(f"    id={f['id']}  serverPackFileId={f.get('serverPackFileId')}  {f['fileName']}")
 
 
 if __name__ == "__main__":

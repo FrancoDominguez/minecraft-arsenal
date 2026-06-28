@@ -86,17 +86,19 @@ resource "google_compute_instance" "minecraft" {
   # Minimal startup script: render runtime config, sync deploy/ from the bucket,
   # run bootstrap.sh. All heavy logic lives in the git-versioned server/ scripts.
   metadata_startup_script = templatefile("${path.module}/templates/startup.sh.tpl", {
-    bucket_name           = google_storage_bucket.data.name
-    minecraft_version     = var.minecraft_version
-    neoforge_version      = var.neoforge_version
-    java_version          = var.java_version
-    jvm_heap              = var.jvm_heap
-    server_port           = var.server_port
-    curseforge_project_id = var.curseforge_project_id
-    curseforge_file_id    = var.curseforge_server_file_id
-    cf_secret_id          = google_secret_manager_secret.curseforge_api_key.secret_id
-    rcon_secret_id        = google_secret_manager_secret.rcon_password.secret_id
-    backup_retention_days = var.backup_retention_days
+    bucket_name               = google_storage_bucket.data.name
+    minecraft_version         = var.minecraft_version
+    neoforge_version          = var.neoforge_version
+    java_version              = var.java_version
+    jvm_heap                  = var.jvm_heap
+    server_port               = var.server_port
+    curseforge_project_id     = var.curseforge_project_id
+    curseforge_file_id        = var.curseforge_server_file_id
+    curseforge_client_file_id = var.curseforge_client_file_id
+    server_address            = "${google_compute_address.minecraft.address}:${var.server_port}"
+    cf_secret_id              = google_secret_manager_secret.curseforge_api_key.secret_id
+    rcon_secret_id            = google_secret_manager_secret.rcon_password.secret_id
+    backup_retention_days     = var.backup_retention_days
   })
 
   # Make sure the API, bucket, scripts, secrets, and IAM exist before first boot.
