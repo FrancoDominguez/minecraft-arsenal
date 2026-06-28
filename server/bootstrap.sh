@@ -126,6 +126,18 @@ chown -R root:root /opt/minecraft
 "$DEPLOY/restore.sh" || log "restore step reported no backup to restore (fresh world)"
 
 # ---------------------------------------------------------------------------
+# 5b. Seed FTB Ranks. Runs after restore so a restored world's existing
+# ranks.snbt is preserved; only fresh worlds get our seed. The `member` rank
+# grants ftbchunks.chunk_load_offline so force-loaded chunks keep ticking
+# when no players are online (iron farms, etc.).
+# ---------------------------------------------------------------------------
+mkdir -p "$SRV/world/serverconfig/ftbranks"
+if [[ ! -f "$SRV/world/serverconfig/ftbranks/ranks.snbt" ]]; then
+  cp "$DEPLOY/config/ftbranks/ranks.snbt" "$SRV/world/serverconfig/ftbranks/ranks.snbt"
+  log "seeded world/serverconfig/ftbranks/ranks.snbt"
+fi
+
+# ---------------------------------------------------------------------------
 # 6. systemd: the server + the daily backup timer
 # ---------------------------------------------------------------------------
 # Skipped when there's no systemd (e.g. the local Docker test harness, which
