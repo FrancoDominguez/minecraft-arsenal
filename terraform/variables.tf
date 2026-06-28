@@ -26,14 +26,14 @@ variable "zone" {
 
 variable "machine_type" {
   type        = string
-  default     = "e2-standard-4" # 4 vCPU / 16 GB, ~$98/mo on-demand. Bump to e2-standard-8 if ATM11 lags.
+  default     = "e2-standard-4" # 4 vCPU / 16 GB, ~$98/mo on-demand. Bump to e2-standard-8 if ATM10 lags.
   description = "Compute Engine machine type."
 }
 
 variable "boot_disk_size_gb" {
   type        = number
   default     = 60
-  description = "Boot/data disk size. ATM11 + a world needs room; 60GB is comfortable. GCS is the durable copy."
+  description = "Boot/data disk size. ATM10 + a world needs room; 60GB is comfortable. GCS is the durable copy."
 }
 
 variable "boot_disk_type" {
@@ -81,37 +81,37 @@ variable "backup_retention_days" {
 }
 
 # ---------------------------------------------------------------------------
-# Minecraft / All the Mods 11 — all parameterized because ATM11 is alpha and
-# bumps versions often. Switching to ATM10 = change these few values.
+# Minecraft / All the Mods 10 — all parameterized so bumping the pack version
+# (or switching packs entirely) = change these few values.
 # ---------------------------------------------------------------------------
 variable "minecraft_version" {
   type        = string
-  default     = "26.1.2"
-  description = "Minecraft version ATM11 targets."
+  default     = "1.21.1"
+  description = "Minecraft version ATM10 targets."
 }
 
 variable "neoforge_version" {
   type        = string
-  default     = "26.1.2.76"
-  description = "NeoForge build for the pack (what the ATM11 0.1.2 ServerFiles ship). Bump alongside the pack version."
+  default     = "21.1.180"
+  description = "NeoForge build for the pack (the line ATM10 7.x ServerFiles ship). Informational — the pack's bundled NeoForge installer is authoritative. Bump alongside the pack version."
 }
 
 variable "java_version" {
   type        = string
-  default     = "25"
-  description = "Temurin JDK major version. Must match what the pack's NeoForge build is compiled for — ATM11 / NeoForge 26.1.2.x needs Java 25 (class file v69)."
+  default     = "21"
+  description = "Temurin JDK major version. Must match what the pack's NeoForge build is compiled for — ATM10 / MC 1.21.1 / NeoForge 21.1.x needs Java 21."
 }
 
 variable "curseforge_project_id" {
   type        = string
-  default     = "" # ATM11 numeric project id — fill from the CurseForge page/API. See docs/ARCHITECTURE.md.
-  description = "CurseForge numeric project ID for All the Mods 11."
+  default     = "925200" # All the Mods 10 (ATM10). See docs/ARCHITECTURE.md.
+  description = "CurseForge numeric project ID for All the Mods 10."
 }
 
 variable "curseforge_server_file_id" {
   type        = string
-  default     = ""
-  description = "CurseForge file ID of the ATM11 *ServerFiles* zip to pin. Bump to update the pack."
+  default     = "8323948" # ServerFiles-7.1.zip (newest ATM10 as of 2026-06-28)
+  description = "CurseForge file ID of the ATM10 *ServerFiles* zip to pin. Bump to update the pack."
 }
 
 variable "curseforge_api_key" {
@@ -123,7 +123,7 @@ variable "curseforge_api_key" {
 
 variable "jvm_heap" {
   type        = string
-  default     = "12G" # ~12G heap on a 16G box, leaving ~4G for OS/off-heap. ATM11 wants 10-12G.
+  default     = "12G" # ~12G heap on a 16G box, leaving ~4G for OS/off-heap. ATM10 wants 10-12G.
   description = "Max JVM heap (-Xmx). Keep a few GB headroom under total RAM."
 }
 

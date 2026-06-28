@@ -1,5 +1,5 @@
 [Unit]
-Description=All the Mods 11 Minecraft Server (NeoForge)
+Description=All the Mods 10 Minecraft Server (NeoForge)
 After=network-online.target
 Wants=network-online.target
 
